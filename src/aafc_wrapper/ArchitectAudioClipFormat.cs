@@ -2,8 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace ArchitectAPI.Wrappers.Audio
 {
-    // change dll path if using a unique file structure
-    public class ArchitectAudioClipFormat
+    public unsafe class ArchitectAudioClipFormat
     {
         
         /// <summary>
@@ -11,7 +10,7 @@ namespace ArchitectAPI.Wrappers.Audio
         /// </summary>
         /// <param name="data">The managed data to utilize</param>
         /// <returns>Uncompressed 32 bit float AAFC data</returns>
-        [DllImport("Internal/aafc.dll")]
+        [DllImport("aafc")]
         public static extern IntPtr aafc_import(byte[] data);
 
         /// <summary>
@@ -23,7 +22,7 @@ namespace ArchitectAPI.Wrappers.Audio
         /// <param name="samplelength">The length of the audio data</param>
         /// <param name="bps">Bits per sample</param>
         /// <param name="sampletype">1 -> PCM, 2 -> ADPCM</param>
-        [DllImport("Internal/aafc.dll")]
+        [DllImport("aafc")]
         public static extern IntPtr aafc_export(float[] samples, int freq, int channels, int samplelength, byte bps = 16, byte sampletype = 1, bool forcemono = false);
 
         /// <summary>
@@ -31,14 +30,14 @@ namespace ArchitectAPI.Wrappers.Audio
         /// </summary>
         /// <param name="data">AAFC Input</param>
         /// <returns>28 byte header or 12 byte legacy header</returns>
-        [DllImport("Internal/aafc.dll")]
+        [DllImport("aafc")]
         public static extern IntPtr aafc_getheader(byte[] data);
 
         /// <summary>
         /// Frees all AAFC data from memory
         /// </summary>
         /// <param name="arr"></param>
-        [DllImport("Internal/aafc.dll")]
+        [DllImport("aafc")]
         public static extern IntPtr aafc_free(IntPtr arr);
 
         /// <summary>
@@ -48,8 +47,20 @@ namespace ArchitectAPI.Wrappers.Audio
         /// <param name="length">The absolute samplelength</param>
         /// <param name="type">Integer type (8 > byte, 16 > short, 32 > int)</param>
         /// <returns></returns>
-        [DllImport("Internal/aafc.dll")]
+        [DllImport("aafc")]
         public static extern IntPtr aafc_float_to_int(float* arr, long length, byte type)
+
+        /// <summary>
+        /// Resample audio
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="samplerateoverride"></param>
+        /// <param name="freq"></param>
+        /// <param name="channels"></param>
+        /// <param name="samplelength"></param>
+        /// <returns>Resampled float array</returns>
+        [DllImport("aafc")]
+        public static extern IntPtr aafc_resample_data(float* input, int samplerateoverride, int freq, byte channels, ref int samplelength);
 
         /// <summary>
         /// AAFC Header structure
@@ -112,12 +123,31 @@ namespace ArchitectAPI.Wrappers.Audio
 
     public unsafe class AudioClip : IDisposable
     {
+        /// <summary>
+        /// The name of the clip.
+        /// </summary>
         public string Name { get; private set; }
+        /// <summary>
+        /// Audio data
+        /// </summary>
         public float* Samples { get; private set; }
+        /// <summary>
+        /// Sample rate
+        /// </summary>
         public int Frequency { get; private set; }
+        /// <summary>
+        /// Interleaved sample length
+        /// </summary>
         public int SampleLength { get; private set; }
+        /// <summary>
+        /// Pre-multiplied Sample length
+        /// </summary>
         public int ActualSampleLength { get; private set; }
+        /// <summary>
+        /// Channels defined
+        /// </summary>
         public int Channels { get; private set; }
+
         bool disposed = false;
 
         public AudioClip(string name, float[] samples, int sampleLength, int freq, int channels)
@@ -141,6 +171,24 @@ namespace ArchitectAPI.Wrappers.Audio
             ActualSampleLength = sampleLength * channels;
         }
 
+        // oh
+        public void Resample(int newSampleRate)
+        {
+            float* rsptr = Samples;
+            int newSampleLength = ActualSampleLength;
+            IntPtr newSamplesPtr = ArchitectAudioClipFormat.aafc_resample_data(rsptr, newSampleRate, Frequency, (byte)Channels, ref newSampleLength);
+
+            if (newSamplesPtr != IntPtr.Zero)
+            {
+                if (Samples != null)
+                {
+                    Marshal.FreeHGlobal((IntPtr)Samples);
+                }
+                Samples = (float*)newSamplesPtr;
+                ActualSampleLength = newSampleLength;
+                SampleLength = ActualSampleLength / Channels;
+            }
+        }
 
         protected virtual void Dispose(bool disposing)
         {
