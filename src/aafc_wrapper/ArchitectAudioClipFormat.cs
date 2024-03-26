@@ -23,7 +23,7 @@ namespace ArchitectAPI.Wrappers.Audio
         /// <param name="bps">Bits per sample</param>
         /// <param name="sampletype">1 -> PCM, 2 -> ADPCM</param>
         [DllImport("aafc")]
-        public static extern IntPtr aafc_export(float* samples, int freq, int channels, int samplelength, byte bps = 16, byte sampletype = 1, bool forcemono = false);
+        public static extern IntPtr aafc_export(float* samples, int freq, int channels, int samplelength, byte bps = 16, byte sampletype = 1, bool forcemono = false, int samplerateoverride = 0, bool nm = false);
 
         /// <summary>
         /// Gets the header from AAFC data
@@ -65,7 +65,7 @@ namespace ArchitectAPI.Wrappers.Audio
         /// <param name="type">Integer type (8 > byte, 16 > short, 32 > int)</param>
         /// <returns></returns>
         [DllImport("aafc")]
-        public static extern IntPtr aafc_int_to_float(IntPtr* arr, long length, byte type)
+        public static extern IntPtr aafc_int_to_float(IntPtr arr, long length, byte type)
 
         /// <summary>
         /// Resample audio
@@ -78,6 +78,15 @@ namespace ArchitectAPI.Wrappers.Audio
         /// <returns>Resampled float array</returns>
         [DllImport("aafc")]
         public static extern IntPtr aafc_resample_data(float* input, int samplerateoverride, int freq, byte channels, ref int samplelength);
+
+        /// <summary>
+        /// Normalizes the sample array
+        /// </summary>
+        /// <param name="arr">Array input</param>
+        /// <param name="len">Absolute sample length</param>
+        /// <returns></returns>
+        [DllImport("aafc")]
+        public static extern IntPtr aafc_normalize(float* arr, int len);
 
         /// <summary>
         /// AAFC Header structure
@@ -96,9 +105,9 @@ namespace ArchitectAPI.Wrappers.Audio
             public byte sampletype;
         }
 
-        public unsafe static byte[] ToByteArray(float[] samples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0)
+        public unsafe static byte[] ToByteArray(float[] samples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0, bool nm = false)
         {
-            byte* rstptr = (byte*)aafc_export(samples, clip.frequency, clip.channels, samples.Length, bps, sampletype, mono, sproverride);
+            byte* rstptr = (byte*)aafc_export(samples, clip.frequency, clip.channels, samples.Length, bps, sampletype, mono, sproverride, nm);
 
             int splen = (mono ? (samples.Length / channels) : samples.Length);
             float reratio = sproverride != 0 ? (float)sproverride / clip.frequency : 0;
@@ -134,7 +143,7 @@ namespace ArchitectAPI.Wrappers.Audio
             return rst;
         }
 
-        public unsafe static byte[] ToByteArray(byte[] isamples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0)
+        public unsafe static byte[] ToByteArray(byte[] isamples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0, bool nm = false)
         {
             float[] samples;
             fixed (byte* ptr = isamples)
@@ -142,7 +151,7 @@ namespace ArchitectAPI.Wrappers.Audio
                 Marshal.Copy((IntPtr)aafc_int_to_float(isamples, isamples.Length, 8), samples, 0, isamples.Length);
             }
 
-            byte* rstptr = (byte*)aafc_export(samples, clip.frequency, clip.channels, samples.Length, bps, sampletype, mono, sproverride);
+            byte* rstptr = (byte*)aafc_export(samples, clip.frequency, clip.channels, samples.Length, bps, sampletype, mono, sproverride, nm);
 
             int splen = (mono ? (samples.Length / channels) : samples.Length);
             float reratio = sproverride != 0 ? (float)sproverride / clip.frequency : 0;
@@ -178,7 +187,7 @@ namespace ArchitectAPI.Wrappers.Audio
             return rst;
         }
 
-        public unsafe static byte[] ToByteArray(short[] isamples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0)
+        public unsafe static byte[] ToByteArray(short[] isamples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0, bool nm = false)
         {
             float[] samples;
             fixed (short* ptr = isamples)
@@ -186,7 +195,7 @@ namespace ArchitectAPI.Wrappers.Audio
                 Marshal.Copy((IntPtr)aafc_int_to_float(isamples, isamples.Length, 16), samples, 0, isamples.Length);
             }
 
-            byte* rstptr = (byte*)aafc_export(samples, clip.frequency, clip.channels, samples.Length, bps, sampletype, mono, sproverride);
+            byte* rstptr = (byte*)aafc_export(samples, clip.frequency, clip.channels, samples.Length, bps, sampletype, mono, sproverride, nm);
 
             int splen = (mono ? (samples.Length / channels) : samples.Length);
             float reratio = sproverride != 0 ? (float)sproverride / clip.frequency : 0;
@@ -222,7 +231,7 @@ namespace ArchitectAPI.Wrappers.Audio
             return rst;
         }
 
-        public unsafe static byte[] ToByteArray(int[] isamples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0)
+        public unsafe static byte[] ToByteArray(int[] isamples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0, bool nm)
         {
             float[] samples;
             fixed (int* ptr = isamples)
@@ -230,7 +239,7 @@ namespace ArchitectAPI.Wrappers.Audio
                 Marshal.Copy((IntPtr)aafc_int_to_float(isamples, isamples.Length, 32), samples, 0, isamples.Length);
             }
 
-            byte* rstptr = (byte*)aafc_export(samples, clip.frequency, clip.channels, samples.Length, bps, sampletype, mono, sproverride);
+            byte* rstptr = (byte*)aafc_export(samples, clip.frequency, clip.channels, samples.Length, bps, sampletype, mono, sproverride, nm);
 
             int splen = (mono ? (samples.Length / channels) : samples.Length);
             float reratio = sproverride != 0 ? (float)sproverride / clip.frequency : 0;
