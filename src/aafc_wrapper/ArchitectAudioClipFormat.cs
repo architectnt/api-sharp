@@ -113,8 +113,8 @@ namespace ArchitectAPI.Wrappers.Audio
             {
                 4 => fnsplen / 2,
                 8 => fnsplen * sizeof(byte),
-                10 => ((fnsplen * 5 + 3) / 4),
-                12 => ((fnsplen * 3) / 2),
+                10 => ((fnsplen * 3) / 4) * 5,
+                12 => ((fnsplen * 1) / 2) * 3,
                 16 => fnsplen * sizeof(short),
                 24 => fnsplen * 3,
                 32 => fnsplen * sizeof(float),
