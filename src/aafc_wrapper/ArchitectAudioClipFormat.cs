@@ -5,7 +5,17 @@ namespace ArchitectAPI.Wrappers.Audio
 {
     public unsafe class ArchitectAudioClipFormat
     {
-        public const string AAFCPATH = ".core/Internal/aafc";
+        public const string AAFCPATH = "Internal/aafc";
+
+        /// <summary>
+        /// Output struct
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        public struct AAFCOUTPUT
+        {
+            public byte* data;
+            public nuint size;
+        }
 
         /// <summary>
         /// Native AAFC Import
@@ -25,7 +35,7 @@ namespace ArchitectAPI.Wrappers.Audio
         /// <param name="bps">Bits per sample</param>
         /// <param name="sampletype">1 -> PCM, 2 -> ADPCM</param>
         [DllImport(AAFCPATH)]
-        public static extern IntPtr aafc_export(float* samples, int freq, int channels, int samplelength, byte bps = 16, byte sampletype = 1, bool forcemono = false, int samplerateoverride = 0, bool nm = false, float pitch = 1);
+        public static extern AAFCOUTPUT aafc_export(float* samples, int freq, int channels, int samplelength, byte bps = 16, byte sampletype = 1, bool forcemono = false, int samplerateoverride = 0, bool nm = false, float pitch = 1);
 
         /// <summary>
         /// Gets the header from AAFC data
@@ -137,20 +147,10 @@ namespace ArchitectAPI.Wrappers.Audio
         {
             fixed (float* fptr = samples)
             {
-                byte* rstptr = (byte*)aafc_export(fptr, samplerate, channels, samples.Length, bps, sampletype, mono, sproverride, nm, pitch);
-
-                int splen = (int)((mono ? ((float)samples.Length / channels) : samples.Length) / pitch);
-                float reratio = sproverride != 0 ? (float)sproverride / samplerate : 0;
-                int resampledlen = (int)(splen * reratio);
-
-                int fnsplen = sproverride != 0 ? resampledlen : splen;
-
-                int bitm = GetFinalSize(bps, sampletype, fnsplen);
-
-                byte[] rst = new byte[bitm];
-
-                Marshal.Copy((IntPtr)rstptr, rst, 0, bitm);
-                Marshal.FreeHGlobal((IntPtr)rstptr);
+                AAFCOUTPUT rstptr = aafc_export(fptr, samplerate, channels, samples.Length, bps, sampletype, mono, sproverride, nm, pitch);
+                byte[] rst = new byte[rstptr.size];
+                Marshal.Copy((IntPtr)rstptr.data, rst, 0, (int)rstptr.size);
+                Marshal.FreeHGlobal((IntPtr)rstptr.data);
                 return rst;
             }
         }
@@ -165,20 +165,10 @@ namespace ArchitectAPI.Wrappers.Audio
 
             fixed (float* fptr = samples)
             {
-                byte* rstptr = (byte*)aafc_export(fptr, samplerate, channels, samples.Length, bps, sampletype, mono, sproverride, nm, pitch);
-
-                int splen = (int)((mono ? ((float)samples.Length / channels) : samples.Length) / pitch);
-                float reratio = sproverride != 0 ? (float)sproverride / samplerate : 0;
-                int resampledlen = (int)(splen * reratio);
-
-                int fnsplen = sproverride != 0 ? resampledlen : splen;
-
-                int bitm = GetFinalSize(bps, sampletype, fnsplen);
-
-                byte[] rst = new byte[bitm];
-
-                Marshal.Copy((IntPtr)rstptr, rst, 0, bitm);
-                Marshal.FreeHGlobal((IntPtr)rstptr);
+                AAFCOUTPUT rstptr = aafc_export(fptr, samplerate, channels, samples.Length, bps, sampletype, mono, sproverride, nm, pitch);
+                byte[] rst = new byte[rstptr.size];
+                Marshal.Copy((IntPtr)rstptr.data, rst, 0, (int)rstptr.size);
+                Marshal.FreeHGlobal((IntPtr)rstptr.data);
                 return rst;
             }
         }
@@ -193,20 +183,10 @@ namespace ArchitectAPI.Wrappers.Audio
 
             fixed (float* fptr = samples)
             {
-                byte* rstptr = (byte*)aafc_export(fptr, samplerate, channels, samples.Length, bps, sampletype, mono, sproverride, nm, pitch);
-
-                int splen = (int)((mono ? ((float)samples.Length / channels) : samples.Length) / pitch);
-                float reratio = sproverride != 0 ? (float)sproverride / samplerate : 0;
-                int resampledlen = (int)(splen * reratio);
-
-                int fnsplen = sproverride != 0 ? resampledlen : splen;
-
-                int bitm = GetFinalSize(bps, sampletype, fnsplen);
-
-                byte[] rst = new byte[bitm];
-
-                Marshal.Copy((IntPtr)rstptr, rst, 0, bitm);
-                Marshal.FreeHGlobal((IntPtr)rstptr);
+                AAFCOUTPUT rstptr = aafc_export(fptr, samplerate, channels, samples.Length, bps, sampletype, mono, sproverride, nm, pitch);
+                byte[] rst = new byte[rstptr.size];
+                Marshal.Copy((IntPtr)rstptr.data, rst, 0, (int)rstptr.size);
+                Marshal.FreeHGlobal((IntPtr)rstptr.data);
                 return rst;
             }
         }
@@ -221,20 +201,10 @@ namespace ArchitectAPI.Wrappers.Audio
 
             fixed (float* fptr = samples)
             {
-                byte* rstptr = (byte*)aafc_export(fptr, samplerate, channels, samples.Length, bps, sampletype, mono, sproverride, nm, pitch);
-
-                int splen = (int)((mono ? ((float)samples.Length / channels) : samples.Length) / pitch);
-                float reratio = sproverride != 0 ? (float)sproverride / samplerate : 0;
-                int resampledlen = (int)(splen * reratio);
-
-                int fnsplen = sproverride != 0 ? resampledlen : splen;
-
-                int bitm = GetFinalSize(bps, sampletype, fnsplen);
-
-                byte[] rst = new byte[bitm];
-
-                Marshal.Copy((IntPtr)rstptr, rst, 0, bitm);
-                Marshal.FreeHGlobal((IntPtr)rstptr);
+                AAFCOUTPUT rstptr = aafc_export(fptr, samplerate, channels, samples.Length, bps, sampletype, mono, sproverride, nm, pitch);
+                byte[] rst = new byte[rstptr.size];
+                Marshal.Copy((IntPtr)rstptr.data, rst, 0, (int)rstptr.size);
+                Marshal.FreeHGlobal((IntPtr)rstptr.data);
                 return rst;
             }
         }
