@@ -5,7 +5,24 @@ namespace ArchitectAPI.Wrappers.Audio
 {
     public unsafe class ArchitectAudioClipFormat
     {
-        public const string AAFCPATH = "Internal/aafc";
+        public const string AAFCPATH = "aafc";
+
+        /// <summary>
+        /// AAFC Header structure
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        public struct AAFC_HEADER
+        {
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 5)]
+            public string headr;
+
+            public int version;
+            public int freq;
+            public byte channels;
+            public int samplelength;
+            public byte bps;
+            public byte sampletype;
+        }
 
         /// <summary>
         /// Output struct
@@ -15,6 +32,13 @@ namespace ArchitectAPI.Wrappers.Audio
         {
             public byte* data;
             public nuint size;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        public struct AAFCDECOUTPUT
+        {
+            public AAFC_HEADER header;
+            public float* data;
         }
 
         /// <summary>
@@ -100,48 +124,6 @@ namespace ArchitectAPI.Wrappers.Audio
         [DllImport(AAFCPATH)]
         public static extern IntPtr aafc_normalize(float* arr, int len);
 
-        /// <summary>
-        /// AAFC Header structure
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        struct AAFC_HEADER
-        {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 5)]
-            public string headr;
-
-            public int version;
-            public int freq;
-            public byte channels;
-            public int samplelength;
-            public byte bps;
-            public byte sampletype;
-        }
-
-        static int GetFinalSize(byte bps, byte sampletype, int fnsplen)
-        {
-            int bsize = bps switch
-            {
-                4 => fnsplen / 2,
-                8 => fnsplen * sizeof(byte),
-                10 => ((fnsplen * 3) / 4) * 5,
-                12 => ((fnsplen * 1) / 2) * 3,
-                16 => fnsplen * sizeof(short),
-                24 => fnsplen * 3,
-                32 => fnsplen * sizeof(float),
-                _ => 0
-            };
-
-            int bitm = sampletype switch
-            {
-                1 => Marshal.SizeOf<AAFC_HEADER>() + bsize,
-                2 => Marshal.SizeOf<AAFC_HEADER>() + fnsplen / 2,
-                3 => Marshal.SizeOf<AAFC_HEADER>() + fnsplen / 8,
-                4 => Marshal.SizeOf<AAFC_HEADER>() + bsize,
-                _ => 0,
-            };
-
-            return bitm;
-        }
 
         public unsafe static byte[] ToByteArray(float[] samples, int channels, int samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, int sproverride = 0, bool nm = false, float pitch = 1)
         {
@@ -213,23 +195,12 @@ namespace ArchitectAPI.Wrappers.Audio
         {
             fixed (byte* bptr = bytes)
             {
-                IntPtr hptr = aafc_getheader(bptr);
-                int freq, samplelength = 0;
-                byte channels = 0;
-
-                if (hptr != IntPtr.Zero)
-                {
-                    AAFC_HEADER header = Marshal.PtrToStructure<AAFC_HEADER>(hptr);
-                    freq = header.freq; channels = header.channels; samplelength = header.samplelength;
-                }
-                else
-                {
-                    Console.WriteLine("Invalid header! It must be AAFC data.");
+                AAFCDECOUTPUT decoutp = aafc_import(bptr);
+                if ((nuint)decoutp.data == nuint.Zero)
                     return null;
-                }
-                IntPtr samples = aafc_import(bptr);
-                AAFC_Clip clip = new(n, (float*)samples, samplelength / channels, freq, channels);
-                return clip;
+
+                AAFC_HEADER h = decoutp.header;
+                return new(n, decoutp.data, h.samplelength / h.channels, h.freq, h.channels);
             }
         }
 
