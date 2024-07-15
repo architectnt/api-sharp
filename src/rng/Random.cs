@@ -1,17 +1,31 @@
-using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-
 // Alternative to System.Random
 namespace ArchitectAPI.Internal
 {
+    public unsafe static class RandomProviders
+    {
+        /// <summary>
+        /// The IHaveNoIdea of all time
+        /// </summary>
+        /// <returns>A seed</returns>
+        public static ulong GenerateRandomSeed()
+        {
+            ulong iHaveNoIdea = (ulong)(unchecked((int)System.DateTime.Now.Ticks));
+            iHaveNoIdea ^= (iHaveNoIdea << 21);
+            iHaveNoIdea ^= (iHaveNoIdea >> 35);
+            iHaveNoIdea ^= (iHaveNoIdea << 4);
+            iHaveNoIdea &= (iHaveNoIdea >> 1);
+            iHaveNoIdea |= (iHaveNoIdea << 3);
+
+            return iHaveNoIdea;
+        }
+    }
+
     /// <summary>
-    /// Architect Enterprises - Xoshiro256** 64-bit Random Number Generater (Slower)
+    /// Architect Enterprises - Xoshiro256** Random Number Generater (Slower)
     /// </summary>
     public unsafe static class Random256
     {
-        static ulong* s;
+        static ulong x, y, z, w;
 
         /// <summary>
         /// Creates a new RNG instance
@@ -19,13 +33,18 @@ namespace ArchitectAPI.Internal
         /// <param name="seed">Specifies a custom seed</param>
         public static void Intialize(ulong seed = 0)
         {
-            s = (ulong*)Marshal.AllocHGlobal(4 * sizeof(ulong));
             byte* seedBytes = stackalloc byte[32];
 
             if (seed == 0)
             {
-                using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-                rng.GetNonZeroBytes(new Span<byte>(seedBytes, 32));
+                ulong what = RandomProviders.GenerateRandomSeed();
+
+                for (int i = 0; i < 32; i += 8)
+                {
+                    ulong* p = (ulong*)(seedBytes + i);
+                    *p = what;
+                    what ^= (what << 21);
+                }
             }
             else
             {
@@ -36,18 +55,12 @@ namespace ArchitectAPI.Internal
                 }
             }
 
-            for (int i = 0; i < 4; i++)
-            {
-                *(s + i) = *((ulong*)(seedBytes + i * 8));
-            }
-
-            if (s[0] == 0 && s[1] == 0 && s[2] == 0 && s[3] == 0)
-            {
-                throw new InvalidOperationException("RNG states all at zero.");
-            }
+            x = *((uint*)seedBytes);
+            y = *((uint*)(seedBytes + 8));
+            z = *((uint*)(seedBytes + 16));
+            w = *((uint*)(seedBytes + 24));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ulong Rotl(ulong x, int k)
         {
             return (x << k) | (x >> (64 - k));
@@ -55,18 +68,10 @@ namespace ArchitectAPI.Internal
 
         public static ulong NextUInt64()
         {
-            ulong rst = Rotl(*(s + 1) * 5, 7) * 9;
-
-            ulong t = *(s + 1) << 17;
-
-            *(s + 2) ^= *s;
-            *(s + 3) ^= *(s + 1);
-            *(s + 1) ^= *(s + 2);
-            *s ^= *(s + 3);
-
-            *(s + 2) ^= t;
-
-            *(s + 3) = Rotl(*(s + 3), 45);
+            ulong rst = Rotl(y * 5, 7) * 9;
+            ulong t = y << 17;
+            z ^= x; w ^= y; y ^= z; x ^= w; z ^= t;
+            w = Rotl(w, 45);
 
             return rst;
         }
@@ -129,8 +134,14 @@ namespace ArchitectAPI.Internal
 
             if (seed == 0)
             {
-                using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-                rng.GetNonZeroBytes(new Span<byte>(seedBytes, 16));
+                ulong what = RandomProviders.GenerateRandomSeed();
+
+                for (int i = 0; i < 16; i += 8)
+                {
+                    ulong* p = (ulong*)(seedBytes + i);
+                    *p = what;
+                    what ^= (what << 21);
+                }
             }
             else
             {
