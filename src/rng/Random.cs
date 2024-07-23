@@ -35,7 +35,7 @@ namespace ArchitectAPI.Internal
         {
             byte* seedBytes = stackalloc byte[32];
 
-            if (seed == 0)
+            if(seed == 0)
             {
                 ulong what = RandomProviders.GenerateRandomSeed();
 
@@ -158,7 +158,7 @@ namespace ArchitectAPI.Internal
             w = *((uint*)(seedBytes + 12));
         }
 
-        public static uint NextUInt32()
+        public static uint Next()
         {
             uint t = x ^ (x << 11);
             x = y; y = z; z = w;
@@ -167,37 +167,91 @@ namespace ArchitectAPI.Internal
 
         public static int Range(int min, int max)
         {
-            return min + (int)(NextUInt32() % ((uint)(max - min)));
+            return min + (int)(Next() % ((uint)(max - min)));
         }
 
         public static float Range(float min, float max)
         {
-            return min + ((NextUInt32() / (float)uint.MaxValue) * (max - min));
+            return min + ((Next() / (float)uint.MaxValue) * (max - min));
         }
 
         public static int Range(int max)
         {
-            return 0 + (int)(NextUInt32() % ((uint)(max - 0)));
+            return 0 + (int)(Next() % ((uint)(max - 0)));
         }
 
         public static float Range(float max)
         {
-            return 0.0f + ((NextUInt32() / (float)uint.MaxValue) * (max - 0));
+            return 0.0f + ((Next() / (float)uint.MaxValue) * (max - 0));
         }
 
         public static bool InChance(float c)
         {
-            return (0.0f + ((NextUInt32() / (float)uint.MaxValue) * (100f - 0f))) < c;
+            return (0.0f + ((Next() / (float)uint.MaxValue) * (100f - 0f))) < c;
         }
 
         public static float RandomFloat()
         {
-            return NextUInt32() / (float)uint.MaxValue;
+            return Next() / (float)uint.MaxValue;
         }
 
         public static double RandomDouble()
         {
-            return NextUInt32() / (double)uint.MaxValue;
+            return Next() / (double)uint.MaxValue;
+        }
+    }
+
+    public unsafe static class RandomLFSR
+    {
+        static ulong rngn;
+
+        public static void Intialize(ulong seed = 0)
+        {
+            rngn = rngn == 0 
+                ? RandomProviders.GenerateRandomSeed() 
+                : seed;
+        }
+
+        public static ulong Next()
+        {
+            ulong bit = (rngn >> 0) ^ (rngn >> 1) ^ (rngn >> 3) ^ (rngn >> 4);
+            rngn = (rngn << 1) | (bit & 1);
+            return rngn;
+        }
+
+        public static int Range(int min, int max)
+        {
+            return min + (int)(Next() % ((ulong)(max - min)));
+        }
+
+        public static float Range(float min, float max)
+        {
+            return min + ((Next() / (float)ulong.MaxValue) * (max - min));
+        }
+
+        public static int Range(int max)
+        {
+            return 0 + (int)(Next() % ((ulong)(max - 0)));
+        }
+
+        public static float Range(float max)
+        {
+            return 0.0f + ((Next() / (float)ulong.MaxValue) * (max - 0));
+        }
+
+        public static bool InChance(float c)
+        {
+            return (0.0f + ((Next() / (float)ulong.MaxValue) * (100f - 0f))) < c;
+        }
+
+        public static float RandomFloat()
+        {
+            return Next() / (float)ulong.MaxValue;
+        }
+
+        public static double RandomDouble()
+        {
+            return Next() / (double)ulong.MaxValue;
         }
     }
 }
