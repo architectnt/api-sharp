@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace ArchitectAPI.Wrappers.Audio
 {
-    public unsafe partial class ArchitectAudioClipFormat
+    public unsafe partial class LibAAFC
     {
         public const string AAFCPATH = "aafc";
 
@@ -12,6 +12,20 @@ namespace ArchitectAPI.Wrappers.Audio
         /// </summary>
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct AAFC_HEADER
+        {
+            public ushort signature;
+            public ushort version;
+            public uint freq;
+            public byte channels;
+            public byte bps;
+            public byte sampletype;
+            public uint samplelength;
+            public uint loopst;
+            public uint loopend;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        public struct AAFC_LCHEADER
         {
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 5)]
             public string headr;
@@ -30,8 +44,8 @@ namespace ArchitectAPI.Wrappers.Audio
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct AAFCOUTPUT
         {
-            public byte* data;
             public nuint size;
+            public byte* data;
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
@@ -41,23 +55,21 @@ namespace ArchitectAPI.Wrappers.Audio
             public float* data;
         }
 
+
+        [LibraryImport(AAFCPATH)]
+        public static partial ushort aafc_getversion();
+
         /// <summary>
         /// Native AAFC Import
         /// </summary>
         /// <param name="data">The managed data to utilize</param>
         /// <returns>Uncompressed 32 bit float AAFC data</returns>
-        [DllImport(AAFCPATH)]
-        public static extern AAFCDECOUTPUT aafc_import(byte* data);
+        [LibraryImport(AAFCPATH)]
+        public static partial AAFCDECOUTPUT aafc_import(byte* data);
 
         /// <summary>
         /// Native AAFC Export
         /// </summary>
-        /// <param name="samples">The raw data to export</param>
-        /// <param name="freq">The sample rate</param>
-        /// <param name="channels">Number of channels to speakers</param>
-        /// <param name="samplelength">The length of the audio data</param>
-        /// <param name="bps">Bits per sample</param>
-        /// <param name="sampletype">1 -> PCM, 2 -> ADPCM</param>
         [LibraryImport(AAFCPATH)]
         public static partial AAFCOUTPUT aafc_export(float* samples, uint freq, uint channels, uint samplelength, byte bps = 16, byte sampletype = 1, [MarshalAs(UnmanagedType.Bool)] bool forcemono = false, uint samplerateoverride = 0, [MarshalAs(UnmanagedType.Bool)] bool nm = false, float pitch = 1);
 
@@ -111,73 +123,67 @@ namespace ArchitectAPI.Wrappers.Audio
         public static partial IntPtr aafc_normalize(float* arr, int len);
 
 
-        public unsafe static byte[] ToByteArray(float[] samples, uint channels, uint samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, uint sproverride = 0, bool nm = false, float pitch = 1)
+        public static byte[] Export(float[] samples, uint channels, uint samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, uint sproverride = 0, bool nm = false, float pitch = 1)
         {
             fixed (float* fptr = samples)
             {
-                AAFCOUTPUT rstptr = aafc_export(fptr, samplerate, channels, (uint)samples.LongLength, bps, sampletype, mono, sproverride, nm, pitch);
-                byte[] rst = new byte[rstptr.size];
-                Marshal.Copy((IntPtr)rstptr.data, rst, 0, (int)rstptr.size);
-                Marshal.FreeHGlobal((IntPtr)rstptr.data);
+                AAFCOUTPUT afo = aafc_export(fptr, samplerate, channels, (uint)samples.LongLength, bps, sampletype, mono, sproverride, nm, pitch);
+                byte[] rst = new byte[afo.size];
+                Marshal.Copy((IntPtr)afo.data, rst, 0, (int)afo.size);
+                Marshal.FreeHGlobal((IntPtr)afo.data);
                 return rst;
             }
         }
 
-        public unsafe static byte[] ToByteArray(byte[] isamples, uint channels, uint samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, uint sproverride = 0, bool nm = false, float pitch = 1)
+        public static byte[] Export(byte[] isamples, uint channels, uint samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, uint sproverride = 0, bool nm = false, float pitch = 1)
         {
-            float[] samples = new float[isamples.Length];
+            float[] samples = new float[isamples.LongLength];
             fixed (byte* ptr = isamples)
-            {
                 Marshal.Copy(aafc_int_to_float((nint)ptr, isamples.Length, 8), samples, 0, isamples.Length);
-            }
 
             fixed (float* fptr = samples)
             {
-                AAFCOUTPUT rstptr = aafc_export(fptr, samplerate, channels, (uint)samples.LongLength, bps, sampletype, mono, sproverride, nm, pitch);
-                byte[] rst = new byte[rstptr.size];
-                Marshal.Copy((IntPtr)rstptr.data, rst, 0, (int)rstptr.size);
-                Marshal.FreeHGlobal((IntPtr)rstptr.data);
+                AAFCOUTPUT afo = aafc_export(fptr, samplerate, channels, (uint)samples.LongLength, bps, sampletype, mono, sproverride, nm, pitch);
+                byte[] rst = new byte[afo.size];
+                Marshal.Copy((IntPtr)afo.data, rst, 0, (int)afo.size);
+                Marshal.FreeHGlobal((IntPtr)afo.data);
                 return rst;
             }
         }
 
-        public unsafe static byte[] ToByteArray(short[] isamples, uint channels, uint samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, uint sproverride = 0, bool nm = false, short pitch = 1)
+        public static byte[] Export(short[] isamples, uint channels, uint samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, uint sproverride = 0, bool nm = false, float pitch = 1)
         {
-            float[] samples = new float[isamples.Length];
+            float[] samples = new float[isamples.LongLength];
             fixed (short* ptr = isamples)
-            {
-                Marshal.Copy(aafc_int_to_float((nint)ptr, isamples.Length, 16), samples, 0, isamples.Length);
-            }
+                Marshal.Copy(aafc_int_to_float((nint)ptr, isamples.LongLength, 16), samples, 0, isamples.Length);
 
             fixed (float* fptr = samples)
             {
-                AAFCOUTPUT rstptr = aafc_export(fptr, samplerate, channels, (uint)samples.LongLength, bps, sampletype, mono, sproverride, nm, pitch);
-                byte[] rst = new byte[rstptr.size];
-                Marshal.Copy((IntPtr)rstptr.data, rst, 0, (int)rstptr.size);
-                Marshal.FreeHGlobal((IntPtr)rstptr.data);
+                AAFCOUTPUT afo = aafc_export(fptr, samplerate, channels, (uint)samples.LongLength, bps, sampletype, mono, sproverride, nm, pitch);
+                byte[] rst = new byte[afo.size];
+                Marshal.Copy((IntPtr)afo.data, rst, 0, (int)afo.size);
+                Marshal.FreeHGlobal((IntPtr)afo.data);
                 return rst;
             }
         }
 
-        public unsafe static byte[] ToByteArray(int[] isamples, uint channels, uint samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, uint sproverride = 0, bool nm = false, int pitch = 1)
+        public static byte[] Export(int[] isamples, uint channels, uint samplerate, bool mono = false, byte bps = 16, byte sampletype = 1, uint sproverride = 0, bool nm = false, float pitch = 1)
         {
-            float[] samples = new float[isamples.Length];
+            float[] samples = new float[isamples.LongLength];
             fixed (int* ptr = isamples)
-            {
-                Marshal.Copy(aafc_int_to_float((nint)ptr, isamples.Length, 32), samples, 0, isamples.Length);
-            }
+                Marshal.Copy(aafc_int_to_float((nint)ptr, isamples.LongLength, 32), samples, 0, isamples.Length);
 
             fixed (float* fptr = samples)
             {
-                AAFCOUTPUT rstptr = aafc_export(fptr, samplerate, channels, (uint)samples.LongLength, bps, sampletype, mono, sproverride, nm, pitch);
-                byte[] rst = new byte[rstptr.size];
-                Marshal.Copy((IntPtr)rstptr.data, rst, 0, (int)rstptr.size);
-                Marshal.FreeHGlobal((IntPtr)rstptr.data);
+                AAFCOUTPUT afo = aafc_export(fptr, samplerate, channels, (uint)samples.LongLength, bps, sampletype, mono, sproverride, nm, pitch);
+                byte[] rst = new byte[afo.size];
+                Marshal.Copy((IntPtr)afo.data, rst, 0, (int)afo.size);
+                Marshal.FreeHGlobal((IntPtr)afo.data);
                 return rst;
             }
         }
 
-        public unsafe static AAFC_Clip FromByteArray(byte[] bytes, string n)
+        public static AudioClip Import(byte[] bytes, string n)
         {
             fixed (byte* bptr = bytes)
             {
@@ -189,26 +195,26 @@ namespace ArchitectAPI.Wrappers.Audio
         }
 
         // read aafc from file system
-        public static AAFC_Clip LoadAAFC(string filename)
+        public static AudioClip LoadAAFC(string filename)
         {
-            return FromByteArray(System.IO.File.ReadAllBytes(filename), System.IO.Path.GetFileNameWithoutExtension(filename));
+            return Import(System.IO.File.ReadAllBytes(filename), System.IO.Path.GetFileNameWithoutExtension(filename));
         }
 
-        public unsafe static byte[] ToByteSamples(AAFC_Clip clip)
+        public static byte[] ToByteSamples(AudioClip clip)
         {
             byte[] rst = new byte[clip.ActualSampleLength];
             Marshal.Copy(aafc_float_to_int(clip.Samples, clip.ActualSampleLength, 8), rst, 0, (int)clip.ActualSampleLength);
             return rst;
         }
 
-        public unsafe static short[] ToShortSamples(AAFC_Clip clip)
+        public static short[] ToShortSamples(AudioClip clip)
         {
             short[] rst = new short[clip.ActualSampleLength];
             Marshal.Copy(aafc_float_to_int(clip.Samples, clip.ActualSampleLength, 16), rst, 0, (int)clip.ActualSampleLength);
             return rst;
         }
 
-        public unsafe static int[] ToIntSamples(AAFC_Clip clip)
+        public static int[] ToIntSamples(AudioClip clip)
         {
             int[] rst = new int[clip.ActualSampleLength];
             Marshal.Copy(aafc_float_to_int(clip.Samples, clip.ActualSampleLength, 32), rst, 0, (int)clip.ActualSampleLength);
@@ -216,7 +222,7 @@ namespace ArchitectAPI.Wrappers.Audio
         }
     }
 
-    public unsafe class AAFC_Clip : IDisposable
+    public unsafe class AudioClip : IDisposable
     {
         /// <summary>
         /// The name of the clip.
@@ -245,7 +251,7 @@ namespace ArchitectAPI.Wrappers.Audio
 
         bool disposed = false;
 
-        public AAFC_Clip(string name, float[] samples, uint sampleLength, uint freq, byte channels)
+        public AudioClip(string name, float[] samples, uint sampleLength, uint freq, byte channels)
         {
             Name = name;
             Samples = (float*)Marshal.AllocHGlobal(samples.Length * sizeof(float));
@@ -256,7 +262,7 @@ namespace ArchitectAPI.Wrappers.Audio
             Channels = channels;
         }
 
-        public AAFC_Clip(string name, float* samples, uint sampleLength, uint freq, byte channels)
+        public AudioClip(string name, float* samples, uint sampleLength, uint freq, byte channels)
         {
             Name = name;
             Samples = samples;
@@ -274,7 +280,7 @@ namespace ArchitectAPI.Wrappers.Audio
 
             float* rsptr = Samples;
             uint newSampleLength = ActualSampleLength;
-            IntPtr newSamplesPtr = ArchitectAudioClipFormat.aafc_resample_data(rsptr, newSampleRate, Frequency, Channels, &newSampleLength, pitch);
+            IntPtr newSamplesPtr = LibAAFC.aafc_resample_data(rsptr, newSampleRate, Frequency, Channels, &newSampleLength, pitch);
 
             if (newSamplesPtr != IntPtr.Zero)
             {
@@ -302,7 +308,7 @@ namespace ArchitectAPI.Wrappers.Audio
             }
         }
 
-        ~AAFC_Clip()
+        ~AudioClip()
         {
             Dispose(disposing: false);
         }
