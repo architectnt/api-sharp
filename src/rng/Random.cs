@@ -207,15 +207,18 @@ namespace ArchitectAPI.Internal
 
         public static void Initalize(ulong seed = 0)
         {
-            rngn = rngn == 0 
+            rngn = seed == 0 
                 ? RandomProviders.GenerateRandomSeed() 
                 : seed;
+
+            if (rngn == 0)
+                rngn = 1;
         }
 
         public static ulong Next()
         {
-            ulong bit = (rngn >> 0) ^ (rngn >> 1) ^ (rngn >> 3) ^ (rngn >> 4);
-            rngn = (rngn << 1) | (bit & 1);
+            ulong bit = (rngn >> 0) ^ (rngn >> 1) ^ (rngn >> 3) ^ (rngn >> 5) ^ (rngn >> 12) ^ (rngn >> 25);
+            rngn = (rngn >> 1) | (bit << 63);
             return rngn;
         }
 
