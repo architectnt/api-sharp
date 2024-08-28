@@ -31,7 +31,7 @@ namespace ArchitectAPI.Internal
         /// Creates a new RNG instance
         /// </summary>
         /// <param name="seed">Specifies a custom seed</param>
-        public static void Intialize(ulong seed = 0)
+        public static void Initalize(ulong seed = 0)
         {
             byte* seedBytes = stackalloc byte[32];
 
@@ -128,7 +128,7 @@ namespace ArchitectAPI.Internal
         /// Creates a new RNG instance
         /// </summary>
         /// <param name="seed">Specifies a custom seed</param>
-        public static void Intialize(uint seed = 0)
+        public static void Initalize(uint seed = 0)
         {
             byte* seedBytes = stackalloc byte[16];
 
@@ -205,7 +205,7 @@ namespace ArchitectAPI.Internal
     {
         static ulong rngn;
 
-        public static void Intialize(ulong seed = 0)
+        public static void Initalize(ulong seed = 0)
         {
             rngn = rngn == 0 
                 ? RandomProviders.GenerateRandomSeed() 
