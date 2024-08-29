@@ -21,7 +21,7 @@ namespace ArchitectAPI.Internal
     }
 
     /// <summary>
-    /// Architect Enterprises - Xoshiro256** Random Number Generater (Slower)
+    /// Architect Enterprises - Xoshiro256** Random Number Generater
     /// </summary>
     public unsafe static class Random256
     {
@@ -35,7 +35,7 @@ namespace ArchitectAPI.Internal
         {
             byte* seedBytes = stackalloc byte[32];
 
-            if(seed == 0)
+            if (seed == 0)
             {
                 ulong what = RandomProviders.GenerateRandomSeed();
 
@@ -61,12 +61,9 @@ namespace ArchitectAPI.Internal
             w = *((uint*)(seedBytes + 24));
         }
 
-        static ulong Rotl(ulong x, int k)
-        {
-            return (x << k) | (x >> (64 - k));
-        }
+        static ulong Rotl(ulong x, int k) => (x << k) | (x >> (64 - k));
 
-        public static ulong NextUInt64()
+        public static ulong Next64()
         {
             ulong rst = Rotl(y * 5, 7) * 9;
             ulong t = y << 17;
@@ -76,49 +73,54 @@ namespace ArchitectAPI.Internal
             return rst;
         }
 
-        public static uint NextUInt32()
+        public static uint Next()
         {
-            return (uint)(NextUInt64() >> 32);
+            return (uint)(Next64() >> 32);
         }
 
         public static int Range(int min, int max)
         {
-            return min + (int)(NextUInt64() % ((ulong)(max - min)));
+            return min + (int)(Next64() % ((ulong)(max - min)));
         }
 
         public static float Range(float min, float max)
         {
-            return min + ((NextUInt64() / (float)ulong.MaxValue) * (max - min));
+            return min + ((Next64() / (float)ulong.MaxValue) * (max - min));
         }
 
         public static int Range(int max)
         {
-            return 0 + (int)(NextUInt64() % ((ulong)(max - 0)));
+            return (int)(Next64() % ((ulong)max));
         }
 
         public static float Range(float max)
         {
-            return 0.0f + ((NextUInt64() / (float)ulong.MaxValue) * (max - 0));
+            return (Next64() / (float)ulong.MaxValue) * max;
         }
 
         public static bool InChance(float c)
         {
-            return (0.0f + ((NextUInt64() / (float)ulong.MaxValue) * (100f - 0f))) < c;
+            return ((Next64() / (float)ulong.MaxValue) * 100f) < c;
         }
 
         public static float RandomFloat()
         {
-            return NextUInt64() / (float)ulong.MaxValue;
+            return Next64() / (float)ulong.MaxValue;
+        }
+
+        public static float Normalized()
+        {
+            return (Next64() / (float)ulong.MaxValue) * 2.0f - 1.0f;
         }
 
         public static double RandomDouble()
         {
-            return NextUInt64() / (double)ulong.MaxValue;
+            return Next64() / (double)ulong.MaxValue;
         }
     }
 
     /// <summary>
-    /// Architect Enterprises - Xorshift128 32-bit Random Number Generater (Fast)
+    /// Architect Enterprises - Xorshift128 32-bit Random Number Generater
     /// </summary>
     public unsafe static class Random128
     {
@@ -177,17 +179,17 @@ namespace ArchitectAPI.Internal
 
         public static int Range(int max)
         {
-            return 0 + (int)(Next() % ((uint)(max - 0)));
+            return (int)(Next() % ((uint)max));
         }
 
         public static float Range(float max)
         {
-            return 0.0f + ((Next() / (float)uint.MaxValue) * (max - 0));
+            return (Next() / (float)uint.MaxValue) * max;
         }
 
         public static bool InChance(float c)
         {
-            return (0.0f + ((Next() / (float)uint.MaxValue) * (100f - 0f))) < c;
+            return ((Next() / (float)uint.MaxValue) * 100f) < c;
         }
 
         public static float RandomFloat()
@@ -195,11 +197,19 @@ namespace ArchitectAPI.Internal
             return Next() / (float)uint.MaxValue;
         }
 
+        public static float Normalized()
+        {
+            return (Next() / (float)uint.MaxValue) * 2.0f - 1.0f;
+        }
+
         public static double RandomDouble()
         {
             return Next() / (double)uint.MaxValue;
         }
     }
+    /// <summary>
+    /// Architect Enterprises - Basic 64 bit LFSR Random Number Generater
+    /// </summary>
 
     public unsafe static class RandomLFSR
     {
@@ -207,20 +217,11 @@ namespace ArchitectAPI.Internal
 
         public static void Initalize(ulong seed = 0)
         {
-            rngn = seed == 0 
-                ? RandomProviders.GenerateRandomSeed() 
-                : seed;
-
-            if (rngn == 0)
-                rngn = 1;
+            rngn = seed == 0 ? RandomProviders.GenerateRandomSeed() : seed;
+            if (rngn == 0) rngn = 1;
         }
 
-        public static ulong Next()
-        {
-            ulong bit = (rngn >> 0) ^ (rngn >> 1) ^ (rngn >> 3) ^ (rngn >> 5) ^ (rngn >> 12) ^ (rngn >> 25);
-            rngn = (rngn >> 1) | (bit << 63);
-            return rngn;
-        }
+        public static ulong Next() => (rngn = (rngn >> 1) | (((rngn >> 0) ^ (rngn >> 1) ^ (rngn >> 3) ^ (rngn >> 5) ^ (rngn >> 12) ^ (rngn >> 25)) << 63));
 
         public static int Range(int min, int max)
         {
@@ -234,22 +235,27 @@ namespace ArchitectAPI.Internal
 
         public static int Range(int max)
         {
-            return 0 + (int)(Next() % ((ulong)(max - 0)));
+            return (int)(Next() % ((ulong)max));
         }
 
         public static float Range(float max)
         {
-            return 0.0f + ((Next() / (float)ulong.MaxValue) * (max - 0));
+            return (Next() / (float)ulong.MaxValue) * max;
         }
 
         public static bool InChance(float c)
         {
-            return (0.0f + ((Next() / (float)ulong.MaxValue) * (100f - 0f))) < c;
+            return ((Next() / (float)ulong.MaxValue) * 100f) < c;
         }
 
         public static float RandomFloat()
         {
             return Next() / (float)ulong.MaxValue;
+        }
+
+        public static float Normalized()
+        {
+            return (Next() / (float)ulong.MaxValue) * 2.0f - 1.0f;
         }
 
         public static double RandomDouble()
