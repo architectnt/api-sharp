@@ -1,7 +1,7 @@
 // Alternative to System.Random
 namespace ArchitectAPI.Internal
 {
-    public unsafe static class RandomProviders
+    public static class RandomProviders
     {
         /// <summary>
         /// The IHaveNoIdea of all time
@@ -9,7 +9,7 @@ namespace ArchitectAPI.Internal
         /// <returns>A seed</returns>
         public static ulong GenerateRandomSeed()
         {
-            ulong iHaveNoIdea = (ulong)(unchecked((int)System.DateTime.Now.Ticks));
+            ulong iHaveNoIdea = (ulong)System.DateTime.Now.Ticks;
             iHaveNoIdea ^= (iHaveNoIdea << 21);
             iHaveNoIdea ^= (iHaveNoIdea >> 35);
             iHaveNoIdea ^= (iHaveNoIdea << 4);
@@ -23,7 +23,7 @@ namespace ArchitectAPI.Internal
     /// <summary>
     /// Architect Enterprises - Xoshiro256** Random Number Generater
     /// </summary>
-    public unsafe static class Random256
+    public static class Random256
     {
         static ulong x, y, z, w;
 
@@ -33,32 +33,12 @@ namespace ArchitectAPI.Internal
         /// <param name="seed">Specifies a custom seed</param>
         public static void Initalize(ulong seed = 0)
         {
-            byte* seedBytes = stackalloc byte[32];
+            if (seed == 0) seed = RandomProviders.GenerateRandomSeed();
 
-            if (seed == 0)
-            {
-                ulong what = RandomProviders.GenerateRandomSeed();
-
-                for (int i = 0; i < 32; i += 8)
-                {
-                    ulong* p = (ulong*)(seedBytes + i);
-                    *p = what;
-                    what ^= (what << 21);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < 32; i += 8)
-                {
-                    ulong* p = (ulong*)(seedBytes + i);
-                    *p = seed;
-                }
-            }
-
-            x = *((uint*)seedBytes);
-            y = *((uint*)(seedBytes + 8));
-            z = *((uint*)(seedBytes + 16));
-            w = *((uint*)(seedBytes + 24));
+            x = seed;
+            y = seed ^ (seed << 21);
+            z = seed ^ (seed >> 17);
+            w = seed ^ (seed << 43);
         }
 
         static ulong Rotl(ulong x, int k) => (x << k) | (x >> (64 - k));
@@ -122,7 +102,7 @@ namespace ArchitectAPI.Internal
     /// <summary>
     /// Architect Enterprises - Xorshift128 32-bit Random Number Generater
     /// </summary>
-    public unsafe static class Random128
+    public static class Random128
     {
         static uint x, y, z, w;
 
@@ -132,32 +112,21 @@ namespace ArchitectAPI.Internal
         /// <param name="seed">Specifies a custom seed</param>
         public static void Initalize(uint seed = 0)
         {
-            byte* seedBytes = stackalloc byte[16];
-
             if (seed == 0)
             {
-                ulong what = RandomProviders.GenerateRandomSeed();
-
-                for (int i = 0; i < 16; i += 8)
-                {
-                    ulong* p = (ulong*)(seedBytes + i);
-                    *p = what;
-                    what ^= (what << 21);
-                }
+                ulong huh = RandomProviders.GenerateRandomSeed();
+                x = (uint)(huh & 0xFFFFFFFF);
+                y = (uint)((huh >> 32) & 0xFFFFFFFF);
+                z = (uint)((huh >> 16) & 0xFFFFFFFF);
+                w = (uint)(huh >> 24);
             }
             else
             {
-                for (int i = 0; i < 16; i += 8)
-                {
-                    uint* p = (uint*)(seedBytes + i);
-                    *p = seed;
-                }
+                x = seed;
+                y = seed ^ (seed << 7);
+                z = seed ^ (seed >> 11);
+                w = seed ^ (seed << 13);
             }
-
-            x = *((uint*)seedBytes);
-            y = *((uint*)(seedBytes + 4));
-            z = *((uint*)(seedBytes + 8));
-            w = *((uint*)(seedBytes + 12));
         }
 
         public static uint Next()
@@ -207,11 +176,12 @@ namespace ArchitectAPI.Internal
             return Next() / (double)uint.MaxValue;
         }
     }
+
     /// <summary>
     /// Architect Enterprises - Basic 64 bit LFSR Random Number Generater
     /// </summary>
 
-    public unsafe static class RandomLFSR
+    public static class RandomLFSR
     {
         static ulong rngn;
 
@@ -221,7 +191,11 @@ namespace ArchitectAPI.Internal
             if (rngn == 0) rngn = 1;
         }
 
-        public static ulong Next() => (rngn = (rngn >> 1) | (((rngn >> 0) ^ (rngn >> 1) ^ (rngn >> 3) ^ (rngn >> 5) ^ (rngn >> 12) ^ (rngn >> 25)) << 63));
+        public static ulong Next()
+        {
+            ulong b = (rngn >> 0) ^ (rngn >> 1) ^ (rngn >> 3) ^ (rngn >> 5) ^ (rngn >> 12) ^ (rngn >> 25);
+            return (rngn = (rngn >> 1) | (b << 63));
+        }
 
         public static int Range(int min, int max)
         {
