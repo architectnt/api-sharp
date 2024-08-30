@@ -18,6 +18,14 @@ namespace ArchitectAPI.Internal
 
             return iHaveNoIdea;
         }
+
+        public static void InitializeAll()
+        {
+            RandomPCG.Initalize();
+            Random256.Initalize();
+            Random128.Initalize();
+            RandomLFSR.Initalize();
+        }
     }
 
     /// <summary>
@@ -195,6 +203,78 @@ namespace ArchitectAPI.Internal
         {
             ulong b = (rngn >> 0) ^ (rngn >> 1) ^ (rngn >> 3) ^ (rngn >> 5) ^ (rngn >> 12) ^ (rngn >> 25);
             return (rngn = (rngn >> 1) | (b << 63));
+        }
+
+        public static int Range(int min, int max)
+        {
+            return min + (int)(Next() % ((ulong)(max - min)));
+        }
+
+        public static float Range(float min, float max)
+        {
+            return min + ((Next() / (float)ulong.MaxValue) * (max - min));
+        }
+
+        public static int Range(int max)
+        {
+            return (int)(Next() % ((ulong)max));
+        }
+
+        public static float Range(float max)
+        {
+            return (Next() / (float)ulong.MaxValue) * max;
+        }
+
+        public static bool InChance(float c)
+        {
+            return ((Next() / (float)ulong.MaxValue) * 100f) < c;
+        }
+
+        public static float RandomFloat()
+        {
+            return Next() / (float)ulong.MaxValue;
+        }
+
+        public static float Normalized()
+        {
+            return (Next() / (float)ulong.MaxValue) * 2.0f - 1.0f;
+        }
+
+        public static double RandomDouble()
+        {
+            return Next() / (double)ulong.MaxValue;
+        }
+    }
+
+
+
+    public static class RandomPCG
+    {
+        static ulong s;
+        static ulong i;
+
+        public static void Initalize(ulong seed = 0, ulong ic = 0)
+        {
+            if (seed == 0) seed = RandomProviders.GenerateRandomSeed();
+            if (ic == 0) ic = RandomProviders.GenerateRandomSeed() | 1;
+            s = 0U;
+            i = (ic << 1) | 1;
+            Next();
+            s += seed;
+            Next();
+        }
+
+        /* 
+            because we cant basically do what it does in c we're limited by pointless casts to make roslyn happy
+            beware casting overhead
+        */
+        public static ulong Next()
+        {
+            ulong odst = s;
+            s = odst * 6364136223846793005UL + (i | 1);
+            ulong xshft = ((odst >> 18) ^ odst) >> 27;
+            ulong r = odst >> 59;
+            return (xshft >> (int)r) | (xshft << ((-(int)r) & 31));
         }
 
         public static int Range(int min, int max)
