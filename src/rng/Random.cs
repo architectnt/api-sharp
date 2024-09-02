@@ -63,20 +63,7 @@ namespace ArchitectAPI.Internal
 
         static ulong Rotl(ulong x, int k) => (x << k) | (x >> (64 - k));
 
-        public static ulong Next()
-        {
-            ulong rst = Rotl(y * 5, 7) * 9;
-            ulong t = y << 17;
-            z ^= x; w ^= y; y ^= z; x ^= w; z ^= t;
-            w = Rotl(w, 45);
-
-            return rst;
-        }
-
-        public static uint Next32()
-        {
-            return (uint)(Value >> 32);
-        }
+        public static uint Next32() => (uint)(Value >> 32);
 
         public static int Range(int min, int max)
         {
@@ -297,14 +284,7 @@ namespace ArchitectAPI.Internal
             because we cant basically do what it does in c we're limited by pointless casts to make roslyn happy
             beware casting overhead
         */
-        public static ulong Next()
-        {
-            ulong odst = s;
-            s = odst * 6364136223846793005UL + (i | 1);
-            ulong xshft = ((odst >> 18) ^ odst) >> 27;
-            ulong r = odst >> 59;
-            return (xshft >> (int)r) | (xshft << ((-(int)r) & 31));
-        }
+        static ulong Next() => Value;
 
         public static int Range(int min, int max)
         {
