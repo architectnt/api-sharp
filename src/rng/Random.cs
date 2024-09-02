@@ -21,10 +21,10 @@ namespace ArchitectAPI.Internal
 
         public static void InitializeAll()
         {
-            RandomPCG.Initalize();
-            Random256.Initalize();
-            Random128.Initalize();
-            RandomLFSR.Initalize();
+            RandomPCG.Initialize();
+            Random256.Initialize();
+            Random128.Initialize();
+            RandomLFSR.Initialize();
         }
     }
 
@@ -34,12 +34,24 @@ namespace ArchitectAPI.Internal
     public static class Random256
     {
         static ulong x, y, z, w;
+        static ulong Value
+        {
+            get
+            {
+                ulong rst = Rotl(y * 5, 7) * 9;
+                ulong t = y << 17;
+                z ^= x; w ^= y; y ^= z; x ^= w; z ^= t;
+                w = Rotl(w, 45);
+
+                return rst;
+            }
+        }
 
         /// <summary>
         /// Creates a new RNG instance
         /// </summary>
         /// <param name="seed">Specifies a custom seed</param>
-        public static void Initalize(ulong seed = 0)
+        public static void Initialize(ulong seed = 0)
         {
             if (seed == 0) seed = RandomProviders.GenerateRandomSeed();
 
@@ -63,47 +75,47 @@ namespace ArchitectAPI.Internal
 
         public static uint Next32()
         {
-            return (uint)(Next() >> 32);
+            return (uint)(Value >> 32);
         }
 
         public static int Range(int min, int max)
         {
-            return (int)(Next() % ((ulong)(max - min))) + min;
+            return (int)(Value % ((ulong)(max - min))) + min;
         }
 
         public static float Range(float min, float max)
         {
-            return (float)((Next() / (double)ulong.MaxValue) * (max - min) + min);
+            return (float)((Value / (double)ulong.MaxValue) * (max - min) + min);
         }
 
         public static int Range(int max)
         {
-            return (int)(Next() % ((ulong)max));
+            return (int)(Value % ((ulong)max));
         }
 
         public static float Range(float max)
         {
-            return (float)(Next() / (double)ulong.MaxValue) * max;
+            return (float)(Value / (double)ulong.MaxValue) * max;
         }
 
         public static bool InChance(float c)
         {
-            return (float)((Next() / (double)ulong.MaxValue) * 100f) < c;
+            return (float)((Value / (double)ulong.MaxValue) * 100f) < c;
         }
 
         public static float RandomFloat()
         {
-            return (float)(Next() / (double)ulong.MaxValue);
+            return (float)(Value / (double)ulong.MaxValue);
         }
 
         public static float Normalized()
         {
-            return (float)(Next() / (double)ulong.MaxValue) * 2.0f - 1.0f;
+            return (float)(Value / (double)ulong.MaxValue) * 2.0f - 1.0f;
         }
 
         public static double RandomDouble()
         {
-            return Next() / (double)ulong.MaxValue;
+            return Value / (double)ulong.MaxValue;
         }
     }
 
@@ -113,12 +125,21 @@ namespace ArchitectAPI.Internal
     public static class Random128
     {
         static uint x, y, z, w;
+        static uint Value
+        {
+            get
+            {
+                uint t = x ^ (x << 11);
+                x = y; y = z; z = w;
+                return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
+            }
+        }
 
         /// <summary>
         /// Creates a new RNG instance
         /// </summary>
         /// <param name="seed">Specifies a custom seed</param>
-        public static void Initalize(uint seed = 0)
+        public static void Initialize(uint seed = 0)
         {
             if (seed == 0)
             {
@@ -137,51 +158,44 @@ namespace ArchitectAPI.Internal
             }
         }
 
-        public static uint Next()
-        {
-            uint t = x ^ (x << 11);
-            x = y; y = z; z = w;
-            return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
-        }
-
         public static int Range(int min, int max)
         {
-            return (int)(Next() % ((uint)(max - min))) + min;
+            return (int)(Value % ((uint)(max - min))) + min;
         }
 
         public static float Range(float min, float max)
         {
-            return (Next() / (float)uint.MaxValue) * (max - min) + min;
+            return (Value / (float)uint.MaxValue) * (max - min) + min;
         }
 
         public static int Range(int max)
         {
-            return (int)(Next() % ((uint)max));
+            return (int)(Value % ((uint)max));
         }
 
         public static float Range(float max)
         {
-            return (Next() / (float)uint.MaxValue) * max;
+            return (Value / (float)uint.MaxValue) * max;
         }
 
         public static bool InChance(float c)
         {
-            return ((Next() / (float)uint.MaxValue) * 100f) < c;
+            return ((Value / (float)uint.MaxValue) * 100f) < c;
         }
 
         public static float RandomFloat()
         {
-            return Next() / (float)uint.MaxValue;
+            return Value / (float)uint.MaxValue;
         }
 
         public static float Normalized()
         {
-            return (Next() / (float)uint.MaxValue) * 2.0f - 1.0f;
+            return (Value / (float)uint.MaxValue) * 2.0f - 1.0f;
         }
 
         public static double RandomDouble()
         {
-            return Next() / (double)uint.MaxValue;
+            return Value / (double)uint.MaxValue;
         }
     }
 
@@ -192,59 +206,61 @@ namespace ArchitectAPI.Internal
     public static class RandomLFSR
     {
         static ulong rngn;
+        static ulong Value
+        {
+            get
+            {
+                ulong b = (rngn >> 63) ^ (rngn >> 62) ^ (rngn >> 60) ^ (rngn >> 59);
+                rngn <<= 1;
+                rngn |= (~b) & 1;
+                return rngn;
+            }
+        }
 
-        public static void Initalize(ulong seed = 0)
+        public static void Initialize(ulong seed = 0)
         {
             rngn = seed == 0 ? RandomProviders.GenerateRandomSeed() : seed;
             if (rngn == 0) rngn = 1;
         }
 
-        public static ulong Next()
-        {
-            ulong b = (rngn >> 63) ^ (rngn >> 62) ^ (rngn >> 60) ^ (rngn >> 59);
-            rngn <<= 1;
-            rngn |= (~b) & 1;
-            return rngn;
-        }
-
         public static int Range(int min, int max)
         {
-            return (int)(Next() % ((ulong)(max - min))) + min;
+            return (int)(Value % ((ulong)(max - min))) + min;
         }
 
         public static float Range(float min, float max)
         {
-            return (float)((Next() / (double)ulong.MaxValue) * (max - min) + min);
+            return (float)((Value / (double)ulong.MaxValue) * (max - min) + min);
         }
 
         public static int Range(int max)
         {
-            return (int)(Next() % ((ulong)max));
+            return (int)(Value % ((ulong)max));
         }
 
         public static float Range(float max)
         {
-            return (float)(Next() / (double)ulong.MaxValue) * max;
+            return (float)(Value / (double)ulong.MaxValue) * max;
         }
 
         public static bool InChance(float c)
         {
-            return (float)((Next() / (double)ulong.MaxValue) * 100f) < c;
+            return (float)((Value / (double)ulong.MaxValue) * 100f) < c;
         }
 
         public static float RandomFloat()
         {
-            return (float)(Next() / (double)ulong.MaxValue);
+            return (float)(Value / (double)ulong.MaxValue);
         }
 
         public static float Normalized()
         {
-            return (float)(Next() / (double)ulong.MaxValue) * 2.0f - 1.0f;
+            return (float)(Value / (double)ulong.MaxValue) * 2.0f - 1.0f;
         }
 
         public static double RandomDouble()
         {
-            return Next() / (double)ulong.MaxValue;
+            return Value / (double)ulong.MaxValue;
         }
     }
 
@@ -254,8 +270,19 @@ namespace ArchitectAPI.Internal
     {
         static ulong s;
         static ulong i;
+        static ulong Value
+        {
+            get
+            {
+                ulong odst = s;
+                s = odst * 6364136223846793005UL + (i | 1);
+                ulong xshft = ((odst >> 18) ^ odst) >> 27;
+                ulong r = odst >> 59;
+                return (xshft >> (int)r) | (xshft << ((-(int)r) & 31));
+            }
+        }
 
-        public static void Initalize(ulong seed = 0, ulong ic = 0)
+        public static void Initialize(ulong seed = 0, ulong ic = 0)
         {
             if (seed == 0) seed = RandomProviders.GenerateRandomSeed();
             if (ic == 0) ic = RandomProviders.GenerateRandomSeed() | 1;
@@ -281,42 +308,42 @@ namespace ArchitectAPI.Internal
 
         public static int Range(int min, int max)
         {
-            return (int)(Next() % ((ulong)(max - min))) + min;
+            return (int)(Value % ((ulong)(max - min))) + min;
         }
 
         public static float Range(float min, float max)
         {
-            return (float)((Next() / (double)ulong.MaxValue) * (max - min)) + min;
+            return (float)((Value / (double)ulong.MaxValue) * (max - min)) + min;
         }
 
         public static int Range(int max)
         {
-            return (int)(Next() % ((ulong)max));
+            return (int)(Value % ((ulong)max));
         }
 
         public static float Range(float max)
         {
-            return (float)(Next() / (double)ulong.MaxValue) * max;
+            return (float)(Value / (double)ulong.MaxValue) * max;
         }
 
         public static bool InChance(float c)
         {
-            return (float)((Next() / (double)ulong.MaxValue) * 100f) < c;
+            return (float)((Value / (double)ulong.MaxValue) * 100f) < c;
         }
 
         public static float RandomFloat()
         {
-            return (float)(Next() / (double)ulong.MaxValue);
+            return (float)(Value / (double)ulong.MaxValue);
         }
 
         public static float Normalized()
         {
-            return (float)(Next() / (double)ulong.MaxValue) * 2.0f - 1.0f;
+            return (float)(Value / (double)ulong.MaxValue) * 2.0f - 1.0f;
         }
 
         public static double RandomDouble()
         {
-            return Next() / (double)ulong.MaxValue;
+            return Value / (double)ulong.MaxValue;
         }
     }
 }
