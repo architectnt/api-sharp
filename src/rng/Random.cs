@@ -34,7 +34,7 @@ namespace ArchitectAPI.Internal
     public static class Random256
     {
         static ulong x, y, z, w;
-        static ulong Value
+        public static ulong Value
         {
             get
             {
@@ -112,7 +112,7 @@ namespace ArchitectAPI.Internal
     public static class Random128
     {
         static uint x, y, z, w;
-        static uint Value
+        public static uint Value
         {
             get
             {
@@ -193,7 +193,7 @@ namespace ArchitectAPI.Internal
     public static class RandomLFSR
     {
         static ulong rngn;
-        static ulong Value
+        public static ulong Value
         {
             get
             {
@@ -257,7 +257,7 @@ namespace ArchitectAPI.Internal
     {
         static ulong s;
         static ulong i;
-        static ulong Value
+        public static ulong Value
         {
             get
             {
