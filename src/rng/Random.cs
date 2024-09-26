@@ -10,13 +10,30 @@ namespace ArchitectAPI.Internal
         public static ulong GenerateRandomSeed()
         {
             ulong iHaveNoIdea = (ulong)System.DateTime.Now.Ticks;
-            iHaveNoIdea ^= (iHaveNoIdea << 21);
-            iHaveNoIdea ^= (iHaveNoIdea >> 35);
-            iHaveNoIdea ^= (iHaveNoIdea << 4);
-            iHaveNoIdea &= (iHaveNoIdea >> 1);
-            iHaveNoIdea |= (iHaveNoIdea << 3);
-
+            iHaveNoIdea ^= (iHaveNoIdea << 13) | (iHaveNoIdea >> 51);
+            iHaveNoIdea ^= (iHaveNoIdea >> 7) | (iHaveNoIdea << 57);
+            iHaveNoIdea ^= (iHaveNoIdea << 17) | (iHaveNoIdea >> 47);
+            iHaveNoIdea ^= (iHaveNoIdea >> 11) | (iHaveNoIdea << 53);
+            iHaveNoIdea ^= (iHaveNoIdea << 31);
+            iHaveNoIdea ^= (iHaveNoIdea >> 29);
+            iHaveNoIdea ^= 0xA5A5A5A5A5A5A5A5;
+            iHaveNoIdea ^= (iHaveNoIdea << 43) | (iHaveNoIdea >> 21);
             return iHaveNoIdea;
+        }
+
+        public static ulong[] SplitMix64(ulong seed, uint states)
+        {
+            ulong[] r = new ulong[states];
+            ulong s = seed;
+
+            for (uint i = 0; i < states; i++)
+            {
+                s += 0x9E3779B97f4A7C15UL;
+                ulong tmp = (s ^ (s >> 30)) * 0xBF58476D1CE4E5B9UL;
+                tmp = (tmp ^ (tmp >> 27)) * 0x94D049BB133111EBUL;
+                r[i] = tmp ^ (tmp >> 31);
+            }
+            return r;
         }
 
         public static void InitializeAll()
@@ -54,11 +71,8 @@ namespace ArchitectAPI.Internal
         public static void Initialize(ulong seed = 0)
         {
             if (seed == 0) seed = RandomProviders.GenerateRandomSeed();
-
-            x = seed;
-            y = seed ^ (seed << 21);
-            z = seed ^ (seed >> 17);
-            w = seed ^ (seed << 43);
+            ulong[] s = RandomProviders.SplitMix64(seed, 4);
+            x = s[0]; y = s[1]; z = s[2]; w = s[3];
         }
 
         static ulong Rotl(ulong x, int k) => (x << k) | (x >> (64 - k));
@@ -128,21 +142,8 @@ namespace ArchitectAPI.Internal
         /// <param name="seed">Specifies a custom seed</param>
         public static void Initialize(uint seed = 0)
         {
-            if (seed == 0)
-            {
-                ulong huh = RandomProviders.GenerateRandomSeed();
-                x = (uint)(huh & 0xFFFFFFFF);
-                y = (uint)((huh >> 32) & 0xFFFFFFFF);
-                z = (uint)((huh >> 16) & 0xFFFFFFFF);
-                w = (uint)(huh >> 24);
-            }
-            else
-            {
-                x = seed;
-                y = seed ^ (seed << 7);
-                z = seed ^ (seed >> 11);
-                w = seed ^ (seed << 13);
-            }
+            ulong[] s = RandomProviders.SplitMix64(seed != 0 ? seed : RandomProviders.GenerateRandomSeed(), 4);
+            x = (uint)s[0]; y = (uint)(s[1] >> 32); z = (uint)s[2]; w = (uint)(s[3] >> 32);
         }
 
         public static int Range(int min, int max)
