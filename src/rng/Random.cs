@@ -9,7 +9,7 @@ namespace ArchitectAPI.Internal
         /// <returns>A seed</returns>
         public static ulong GenerateRandomSeed()
         {
-            ulong iHaveNoIdea = (ulong)System.DateTime.Now.Ticks;
+            ulong iHaveNoIdea = (ulong)System.Diagnostics.Stopwatch.GetTimestamp();
             iHaveNoIdea ^= (iHaveNoIdea << 13) | (iHaveNoIdea >> 51);
             iHaveNoIdea ^= (iHaveNoIdea >> 7) | (iHaveNoIdea << 57);
             iHaveNoIdea ^= (iHaveNoIdea << 17) | (iHaveNoIdea >> 47);
