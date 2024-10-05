@@ -75,11 +75,11 @@ namespace ArchitectAPI.Internal
             x = s[0]; y = s[1]; z = s[2]; w = s[3];
         }
 
-        static ulong Rotl(ulong x, int k) =>
-            (x << k) | (x >> (64 - k));
+        static ulong Rotl(ulong x, int k)
+            => (x << k) | (x >> (64 - k));
 
-        public static uint Next32() =>
-            (uint)(Value >> 32);
+        public static uint Next32()
+            => (uint)(Value >> 32);
 
         public static int Range(int min, int max)
             => (int)(Value % ((ulong)(max - min))) + min;
@@ -181,11 +181,14 @@ namespace ArchitectAPI.Internal
             if (rngn == 0) rngn = 1;
         }
 
-        public static int Range(int min, int max) => (int)(Value % ((ulong)(max - min))) + min;
+        public static int Range(int min, int max)
+            => (int)(Value % ((ulong)(max - min))) + min;
 
-        public static float Range(float min, float max) => (float)((Value / (double)ulong.MaxValue) * (max - min) + min);
+        public static float Range(float min, float max)
+            => (float)((Value / (double)ulong.MaxValue) * (max - min) + min);
 
-        public static int Range(int max) => (int)(Value % ((ulong)max));
+        public static int Range(int max)
+            => (int)(Value % ((ulong)max));
 
         public static float Range(float max)
             => (float)(Value / (double)ulong.MaxValue) * max;
