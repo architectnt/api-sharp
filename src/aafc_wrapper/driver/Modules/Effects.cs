@@ -1,4 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿/*
+    Copyright (C) 2025 Architect Enterprises
+    This file is apart of the API and are MIT licensed
+*/
+
+using System.Runtime.InteropServices;
 namespace ArchitectAPI.Subsystems.Audio.Modules
 {
     public unsafe class Echo : IAudioEffect

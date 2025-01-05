@@ -1,4 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿/*
+    Copyright (C) 2025 Architect Enterprises
+    This file is apart of the API and are MIT licensed
+*/
+
+using System.Runtime.InteropServices;
 namespace ArchitectAPI.Subsystems.Audio
 {
     public static class AudioDriver
@@ -242,7 +247,7 @@ namespace ArchitectAPI.Subsystems.Audio
 
         public static void ProcessAudio(float* output, AudioVoice aud)
         {
-            if (aud == null || !aud.isPlaying || aud.clip == null)
+            if (aud == null || aud.clip == null)
                 return;
 
             AudioClip clip = aud.clip;

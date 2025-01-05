@@ -1,3 +1,8 @@
+/*
+    Copyright (C) 2025 Architect Enterprises
+    This file is apart of the API and are MIT licensed
+*/
+
 // Alternative to System.Random
 namespace ArchitectAPI.Internal
 {

@@ -1,4 +1,9 @@
-﻿namespace ArchitectAPI.Subsystems.Audio.Modules
+﻿/*
+    Copyright (C) 2025 Architect Enterprises
+    This file is apart of the API and are MIT licensed
+*/
+
+namespace ArchitectAPI.Subsystems.Audio.Modules
 {
     // clunky...
     public class EqualizerBand
